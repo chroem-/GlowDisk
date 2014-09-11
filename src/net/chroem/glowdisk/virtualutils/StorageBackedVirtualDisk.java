@@ -18,8 +18,12 @@
  *
  */
 
-package org.Glowstone.glowdisk;
+package net.chroem.glowdisk.virtualutils;
 
-public class GlowFileWriter {
+public class StorageBackedVirtualDisk {//extends VirtualDisk{
+
+	//unimplemented
+	private StorageBackedVirtualDisk() {
+	}
 
 }

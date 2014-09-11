@@ -18,7 +18,7 @@
  *
  */
 
-package org.Glowstone.glowdisk.virtualutils;
+package net.chroem.glowdisk.virtualutils;
 
 public class FreeSpaceMarker {
 	protected int leftBound;

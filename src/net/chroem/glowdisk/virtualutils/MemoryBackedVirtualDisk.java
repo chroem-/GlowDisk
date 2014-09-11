@@ -18,7 +18,7 @@
  *
  */
 
-package org.Glowstone.glowdisk.virtualutils;
+package net.chroem.glowdisk.virtualutils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,7 +35,7 @@ import java.util.Arrays;
 
 import javax.activation.UnsupportedDataTypeException;
 
-import org.Glowstone.glowdisk.virtualutils.AllocatedSpaceMarker;
+import net.chroem.glowdisk.virtualutils.AllocatedSpaceMarker;
 
 
 public class MemoryBackedVirtualDisk extends VirtualDisk{

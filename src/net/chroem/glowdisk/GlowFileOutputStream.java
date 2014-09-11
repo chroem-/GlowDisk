@@ -18,7 +18,7 @@
  *
  */
 
-package org.Glowstone.glowdisk;
+package net.chroem.glowdisk;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,9 +26,9 @@ import java.io.OutputStream;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
 
-import org.Glowstone.glowdisk.virtualutils.AllocatedSpaceMarker;
-import org.Glowstone.glowdisk.virtualutils.MemoryBackedVirtualDisk;
-import org.Glowstone.glowdisk.virtualutils.VirtualFile;
+import net.chroem.glowdisk.virtualutils.AllocatedSpaceMarker;
+import net.chroem.glowdisk.virtualutils.MemoryBackedVirtualDisk;
+import net.chroem.glowdisk.virtualutils.VirtualFile;
 
 //dumby wrapper class just for the purpose of being similar to the Java API
 public class GlowFileOutputStream extends OutputStream{

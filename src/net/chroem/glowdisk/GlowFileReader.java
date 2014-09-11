@@ -18,7 +18,7 @@
  *
  */
 
-package org.Glowstone.glowdisk;
+package net.chroem.glowdisk;
 
 public class GlowFileReader {
 

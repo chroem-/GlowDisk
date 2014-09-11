@@ -18,7 +18,7 @@
  *
  */
 
-package org.Glowstone.glowdisk;
+package net.chroem.glowdisk;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,8 +32,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.Glowstone.glowdisk.virtualutils.VirtualDisk;
-import org.Glowstone.glowdisk.virtualutils.VirtualFile;
+import net.chroem.glowdisk.virtualutils.VirtualDisk;
+import net.chroem.glowdisk.virtualutils.VirtualFile;
 
 public class GlowFile {
 

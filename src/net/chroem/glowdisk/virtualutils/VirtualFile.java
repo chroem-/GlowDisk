@@ -18,7 +18,7 @@
  *
  */
 
-package org.Glowstone.glowdisk.virtualutils;
+package net.chroem.glowdisk.virtualutils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.Glowstone.glowdisk.virtualutils.AllocatedSpaceMarker;
+import net.chroem.glowdisk.virtualutils.AllocatedSpaceMarker;
 
 
 public class VirtualFile {

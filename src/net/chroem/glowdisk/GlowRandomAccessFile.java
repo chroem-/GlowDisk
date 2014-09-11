@@ -18,12 +18,8 @@
  *
  */
 
-package org.Glowstone.glowdisk.virtualutils;
+package net.chroem.glowdisk;
 
-public class StorageBackedVirtualDisk {//extends VirtualDisk{
-
-	//unimplemented
-	private StorageBackedVirtualDisk() {
-	}
+public class GlowRandomAccessFile {
 
 }

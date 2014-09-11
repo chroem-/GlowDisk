@@ -18,8 +18,8 @@
  *
  */
 
-package org.Glowstone.glowdisk;
+package net.chroem.glowdisk;
 
-public class GlowFileChannel {
+public class GlowFileWriter {
 
 }

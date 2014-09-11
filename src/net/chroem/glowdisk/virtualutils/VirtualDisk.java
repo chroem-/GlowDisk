@@ -18,7 +18,7 @@
  *
  */
 
-package org.Glowstone.glowdisk.virtualutils;
+package net.chroem.glowdisk.virtualutils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,9 +33,9 @@ import java.nio.channels.FileChannel.MapMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.Glowstone.glowdisk.virtualutils.AllocatedSpaceMarker;
-import org.Glowstone.glowdisk.virtualutils.FreeSpaceMarker;
-import org.Glowstone.glowdisk.virtualutils.VirtualFile.FilePathMarker;
+import net.chroem.glowdisk.virtualutils.AllocatedSpaceMarker;
+import net.chroem.glowdisk.virtualutils.FreeSpaceMarker;
+import net.chroem.glowdisk.virtualutils.VirtualFile.FilePathMarker;
 
 
 

@@ -18,15 +18,15 @@
  *
  */
 
-package org.Glowstone.glowdisk;
+package net.chroem.glowdisk;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.Glowstone.glowdisk.virtualutils.MemoryBackedVirtualDisk;
-import org.Glowstone.glowdisk.virtualutils.VirtualDisk;
+import net.chroem.glowdisk.virtualutils.MemoryBackedVirtualDisk;
+import net.chroem.glowdisk.virtualutils.VirtualDisk;
 
 public class Main {
 
