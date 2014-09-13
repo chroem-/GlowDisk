@@ -14,7 +14,7 @@ Tests so far indicate at least a 20-50x speed improvement over SSD's.  That fact
 This is just a preliminary release.
 
 ###TODO###
-*	Iron out some kinks in the file tree
+*	~~Iron out some kinks in the file tree~~
 *	Persist file tree structure to disk
 *	Allow chaining of MappedByteBuffers for RAMdisks larger than 2GB
 *	Add support for random access IO (FileChannel and RandomAccessFile)
