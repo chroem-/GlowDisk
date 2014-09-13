@@ -42,14 +42,11 @@ public class Main {
 				System.out.println("Completed in " + ((double) benchmark(nativeFile, glowFile2) / 1000.0) + "s");
 				
 				VirtualDisk disk = new MemoryBackedVirtualDisk(new File("/home/chroem/Desktop/Glowdisk/glowdisk.gldsk"), (int) (1024L * 1024L * 1024L * 1.5));
-				GlowFile memoryFile = new GlowFile("/test/test/test.mkv");
-				glowFile2 = new GlowFile("/test/test/test2.mkv");
+				GlowFile memoryFile = new GlowFile("test.mkv");
+				glowFile2 = new GlowFile("test2.mkv");
 				initialize(memoryFile);
 				System.out.println("Benchmarking memory-backed GlowFile...");
 				System.out.println("Completed in " + ((double) benchmark(memoryFile, glowFile2) / 1000.0) + "s");
-
-				
-				
 			} catch (Exception e) {
 				e.printStackTrace();
 			} 

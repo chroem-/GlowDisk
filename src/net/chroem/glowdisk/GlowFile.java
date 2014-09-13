@@ -53,7 +53,11 @@ public class GlowFile {
 	}
 	
 	public GlowFile(String pathname) {
+		if (!pathname.startsWith(separator)) {
+			pathname = separator + pathname;
+		}
 		this.filePath = pathname;
+		
 		if (isVirtual) {	
 			this.file = null;
 			this.virtualFile = getVirtualFileByPath();
@@ -92,8 +96,8 @@ public class GlowFile {
 	}
 	
 	private VirtualFile getVirtualFileByPath(String filePath) throws FileNotFoundException{
-		String[] path = this.filePath.split(separator);
-		path = (path[0].equals("")) ? Arrays.copyOfRange(path, 1, path.length): path;
+		String[] path = filePath.split(separator);
+		path = (path[0].equals("")) ? Arrays.copyOfRange(path, 1, path.length) : path;
 		return virtualFile = VirtualDisk.getPrimaryDisk().getRoot().getChild(path);
 	}
 	
@@ -161,7 +165,11 @@ public class GlowFile {
 	
 	public GlowFile getParentFile() {
 		if (isVirtual) {
-			return new GlowFile(getParent());
+			if (getParent().equals("")) {
+				return new GlowFile(VirtualDisk.getPrimaryDisk().getRoot());
+			} else {
+				return new GlowFile(getParent());
+			}
 		} else {
 			return new GlowFile(file.getParentFile());
 		}
@@ -238,16 +246,13 @@ public class GlowFile {
 	
 	public boolean createNewFile() throws IOException {
 		if (isVirtual) {
-			if (exists()) {
-				return false;
-			} else {
-				try {
-					this.virtualFile = new VirtualFile(this.filePath, false);
-					return true;
-				} catch (FileNotFoundException e) {
-					return false;
-				}
+			GlowFile parent = this.getParentFile();
+			boolean doesNotExist = !exists() && parent.exists();
+			if (doesNotExist) {
+				this.virtualFile = new VirtualFile(parent.getVirtualFile(), this.getName(), false);
+				return true;
 			}
+			return doesNotExist;
 		} else {
 			return file.createNewFile();
 		}
@@ -316,12 +321,13 @@ public class GlowFile {
 	
 	public boolean mkdir() {// come back
 		if (isVirtual) {
-			boolean doesNotExist = !exists();
+			GlowFile parent = this.getParentFile();
+			boolean doesNotExist = !exists() && parent.exists();
 			if (doesNotExist) {
 				try {
-						this.virtualFile = new VirtualFile(this.filePath, true);
+						this.virtualFile = new VirtualFile(parent.getVirtualFile(), this.getName(), true);
 						doesNotExist = true;
-					} catch (IllegalArgumentException | FileNotFoundException e) {
+					} catch (IllegalArgumentException e) {
 						doesNotExist = false;
 					} 
 				} 

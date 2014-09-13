@@ -51,11 +51,13 @@ public class VirtualFile {
 	private final String path;
 	protected int dataSize = 0;
 	
-	public VirtualFile(String path, boolean isDirectory) throws IllegalArgumentException, FileNotFoundException {
+	
+	//deprecated
+	private VirtualFile(String path, boolean isDirectory) throws IllegalArgumentException, FileNotFoundException {
 		if (path == null) throw new IllegalArgumentException("Path cannot be null!"); 
 		this.path = path;
 		String[] pathSegments = path.split(File.separator);
-		String rootIdentifier = pathSegments[(pathSegments[0].equals("")) ? 1 : 0];
+		//String rootIdentifier = pathSegments[(pathSegments[0].equals("")) ? 1 : 0];
 		String[] parentIdentifiers = Arrays.copyOfRange(pathSegments, ((pathSegments[0].equals("")) ? 1 : 0), pathSegments.length - 1);
 		this.name = pathSegments[pathSegments.length - 1];
 		this.containingDisk = VirtualDisk.getPrimaryDisk();
@@ -66,8 +68,13 @@ public class VirtualFile {
 		parent.addChild(this);
 	}
 	
-	protected VirtualFile(VirtualFile parent, String name, boolean isDirectory) throws IllegalArgumentException {
+	public VirtualFile(VirtualFile parent, String name, boolean isDirectory) throws IllegalArgumentException {
+		if (parent.getPath() != null) {
 		this.path = (parent.getPath().endsWith(File.separator)) ? parent.getPath() + name : parent.getPath() + File.separator + name; 
+		} else {
+			this.path = File.separator + name;
+		}
+			
 		this.parent = parent;
 		this.name = name;
 		this.isDirectory = isDirectory;
@@ -138,12 +145,12 @@ public class VirtualFile {
 	
 	//update later to use an index to avoid making tons of array copies
 	public VirtualFile getChild(String[] path) throws FileNotFoundException {
-		String name = path[0];
-		if (path.length == 1 && !isRoot && this.getName().equals(name) ) {
+		//String name = path[0];
+		if (path.length == 0 /*path.length == 1 && !isRoot &&this.getName().equals(name)*/ ) { //!!!!!!!!!!!!!!!!!!!!!
 			return this;
 		} else {
 			for (VirtualFile file : children) {
-				if (file.getName().equals(name)) {
+				if (file.getName().equals(path[0])) {
 					return file.getChild(Arrays.copyOfRange(path, 1, path.length));
 				}
 			}
@@ -262,8 +269,7 @@ public class VirtualFile {
 	
 	protected VirtualFile addChildDirectories(String[] path, int index) {
 		VirtualFile file = new VirtualFile(this, path[index], true);
-		
-		if (path.length - 1 >= index) {
+		if (index + 1 == path.length) {
 			return file;
 		} else {
 			return file.addChildDirectories(path , index + 1);

@@ -155,7 +155,7 @@ public abstract class VirtualDisk {
 		}
 		FilePathMarker marker = this.root.getLastValidChild(pathSegments);
 
-		return marker.tail.addChildDirectories(pathSegments, marker.index + 1);
+		return marker.tail.addChildDirectories(pathSegments, marker.index);
 	}
 		
 }
