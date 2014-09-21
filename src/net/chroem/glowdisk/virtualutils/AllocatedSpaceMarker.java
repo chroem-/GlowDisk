@@ -22,11 +22,13 @@ package net.chroem.glowdisk.virtualutils;
 
 import java.util.ArrayList;
 
+import com.google.gson.annotations.Expose;
+
 
 
 public class AllocatedSpaceMarker {
-	int beginIndex;
-	int endIndex;
+	@Expose int beginIndex;
+	@Expose int endIndex;
 	
 	//boolean flexible;
 	
@@ -87,6 +89,19 @@ public class AllocatedSpaceMarker {
 		parent.dataSegments.add(allocatedMarker);
 		return allocatedMarker.getSize();
 	}
+	
+	
+	/**
+	 * USE WITH EXTREME CAUTION!!!  
+	 * This method ignores any zone markers and forcefully allocates the provided indexes.  
+	 * USE WITH EXTREME CAUTION!!!  
+	 */
+	protected static void forceAddNewAllocatedZoneToParent(VirtualFile parent, int beginIndex, int endIndex) {
+		AllocatedSpaceMarker allocatedMarker = new AllocatedSpaceMarker(beginIndex, endIndex, parent);
+		FreeSpaceMarker marker = VirtualDisk.allocateSpaceWithReserved(beginIndex, endIndex, allocatedMarker);
+		allocatedMarker.setFollowingUnallocatedZone(marker);
+		parent.dataSegments.add(allocatedMarker);
+	}
 
 	protected int getSize() {
 		return endIndex - beginIndex;
@@ -103,6 +118,7 @@ public class AllocatedSpaceMarker {
 		if (leftMarker.rightBound + 1 == beginIndex && followingUnallocatedZone.leftBound - 1 == endIndex) {
 			emptySpace.remove(index);
 			leftMarker.rightBound = followingUnallocatedZone.rightBound;
+			this.parent.dataSegments.remove(this);
 			return true;
 		}
 		return false;

@@ -144,9 +144,9 @@ public class GlowFile {
 	public String getName() {
 		String parentPath = filePath;
 		if (parentPath.endsWith(separator)) {
-			parentPath = filePath.substring(0, filePath.length() - 2);
+			parentPath = filePath.substring(0, filePath.length() - 1);
 		}
-		String name = parentPath.substring(parentPath.lastIndexOf(separator), filePath.length() - 1);
+		String name = parentPath.substring(parentPath.lastIndexOf(separator), filePath.length());
 		return name;
 	}
 	
@@ -154,7 +154,7 @@ public class GlowFile {
 		if (isVirtual) {
 			String parentPath = filePath;
 			if (parentPath.endsWith(separator)) {
-				parentPath = filePath.substring(0, filePath.length() - 2);
+				parentPath = filePath.substring(0, filePath.length() - 1);
 			}
 			parentPath = parentPath.substring(0, parentPath.lastIndexOf(separator));
 			return parentPath;

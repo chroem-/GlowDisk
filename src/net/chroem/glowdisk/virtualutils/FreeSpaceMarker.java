@@ -46,7 +46,7 @@ public class FreeSpaceMarker {
 	}
 	
 	protected static FreeSpaceMarker generateRoot(VirtualDisk containingDisk) {
-		return new FreeSpaceMarker(0, containingDisk.getSize() - 1, containingDisk);
+		return new FreeSpaceMarker(1024, containingDisk.getSize() - 1, containingDisk);
 	}
 	
 	public int getSize() {

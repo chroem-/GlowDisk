@@ -26,33 +26,38 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.annotations.Expose;
+
 import net.chroem.glowdisk.virtualutils.AllocatedSpaceMarker;
 
 
 public class VirtualFile {
-	protected ArrayList<AllocatedSpaceMarker> dataSegments = new ArrayList<AllocatedSpaceMarker>();
-	private ArrayList<VirtualFile> children = new ArrayList<VirtualFile>();
+	@Expose protected ArrayList<AllocatedSpaceMarker> dataSegments = new ArrayList<AllocatedSpaceMarker>();
+	@Expose private ArrayList<VirtualFile> children = new ArrayList<VirtualFile>();
 	private VirtualFile parent;
-	private String name;
+	@Expose private String name;
 	
 	private VirtualDisk containingDisk;
 	
 	private final boolean isRoot;
 	
-	private final boolean isDirectory;
-	protected boolean hasData = false;
+	@Expose private final boolean isDirectory;
+	@Expose protected boolean hasData = false;
 	
 	protected boolean deleted = false;
 	private boolean deleteOnExit = false;
 	
-	private long lastModified = System.currentTimeMillis();
-	private boolean writeable = true;
+	@Expose private long lastModified = System.currentTimeMillis();
+	@Expose private boolean writeable = true;
 	
-	private final String path;
-	protected int dataSize = 0;
+	@Expose private final String path;
+	@Expose protected int dataSize = 0;
 	
 	
-	//deprecated
+	@Deprecated
 	private VirtualFile(String path, boolean isDirectory) throws IllegalArgumentException, FileNotFoundException {
 		if (path == null) throw new IllegalArgumentException("Path cannot be null!"); 
 		this.path = path;
@@ -70,7 +75,7 @@ public class VirtualFile {
 	
 	public VirtualFile(VirtualFile parent, String name, boolean isDirectory) throws IllegalArgumentException {
 		if (parent.getPath() != null) {
-		this.path = (parent.getPath().endsWith(File.separator)) ? parent.getPath() + name : parent.getPath() + File.separator + name; 
+			this.path = (parent.getPath().endsWith(File.separator)) ? parent.getPath() + name : parent.getPath() + File.separator + name; 
 		} else {
 			this.path = File.separator + name;
 		}
@@ -87,6 +92,27 @@ public class VirtualFile {
 		this.containingDisk = parent.getContainingDisk();
 	}
 	
+	private VirtualFile(VirtualFile parent, JsonObject object) {
+		this(parent, object.get("name").getAsString(), object.get("isDirectory").getAsBoolean());
+		this.lastModified = object.get("lastModified").getAsLong();
+		this.writeable = object.get("writeable").getAsBoolean();
+		this.hasData = object.get("hasData").getAsBoolean();
+		if (isDirectory) {
+			for (JsonElement element : object.get("children").getAsJsonArray()) {
+				new VirtualFile(this, (JsonObject) element);
+			}
+		} else if (hasData) {
+			for (JsonElement element : object.get("dataSegments").getAsJsonArray()) {
+				JsonObject fileJson = element.getAsJsonObject();
+				int beginIndex = fileJson.get("beginIndex").getAsInt();
+				int endIndex = fileJson.get("endIndex").getAsInt();
+				AllocatedSpaceMarker.forceAddNewAllocatedZoneToParent(this, beginIndex, endIndex);
+			}
+		}
+		
+	}
+	
+	//root
 	private VirtualFile(VirtualDisk disk) {
 		//this.path = disk.getRootPath();
 		//this.name = disk.getRootPath();
@@ -96,17 +122,30 @@ public class VirtualFile {
 		this.containingDisk = disk; 
 	}
 	
-	//unused
+	
+	//manifest
 	private VirtualFile() {
 		this.path = null;
 		this.name = null;
 		this.isDirectory = false;
-		this.isRoot = false;
+		this.isRoot = true;
+		this.containingDisk = VirtualDisk.getPrimaryDisk();
 	}
 
 	//given its own method to imply use with caution
 	protected static VirtualFile generateRoot(VirtualDisk containingDisk) {
 		return new VirtualFile(containingDisk);
+	}
+	
+	protected static VirtualFile generateManifest() {
+		return new VirtualFile();
+	}
+	
+	protected void constructChildrenFromJson(JsonArray array) throws Exception {
+		if (!this.isRoot) throw new Exception("Must be root!");
+		for (JsonElement element : array) {
+			new VirtualFile(this, element.getAsJsonObject());
+		}
 	}
 	
 	public String getPath() {
@@ -129,14 +168,17 @@ public class VirtualFile {
 			}
 		}
 		parent.removeChild(this);
+		containingDisk.updateFileManifest();
 	}
 	
 	public void addChild(VirtualFile file) {
 		children.add(file);
+		containingDisk.updateFileManifest();
 	}
 	
 	protected void removeChild(VirtualFile file) {
 		children.remove(file);
+		containingDisk.updateFileManifest();
 	}
 	
 	public String getName() {
@@ -173,7 +215,6 @@ public class VirtualFile {
 		*/
 		if (sizeToChange > this.getContainingDisk().getFreeSpace() || getAllocatedSize() + sizeToChange < 0) throw new IllegalArgumentException("Cannot grow the file larger than the disk or shrink its size below zero!");
 		if (this.hasData && sizeToChange > 0) {
-			////////////////////////////////////////////////////////
 			AllocatedSpaceMarker endMarker = getEndMarker();
 			int freeSpace = endMarker.followingUnallocatedZone.getSize() - 1;
 			if (sizeToChange > freeSpace) {
@@ -184,7 +225,6 @@ public class VirtualFile {
 				endMarker.grow(sizeToChange);
 				return true;
 			}
-			////////////////////////////////////////////////////////
 		} else if (this.hasData && sizeToChange < 0) {
 			AllocatedSpaceMarker endMarker = getEndMarker();
 			int size = endMarker.getSize();
@@ -270,6 +310,7 @@ public class VirtualFile {
 	protected VirtualFile addChildDirectories(String[] path, int index) {
 		VirtualFile file = new VirtualFile(this, path[index], true);
 		if (index + 1 == path.length) {
+			containingDisk.updateFileManifest();
 			return file;
 		} else {
 			return file.addChildDirectories(path , index + 1);
@@ -297,6 +338,7 @@ public class VirtualFile {
 	
 	public void setWriteable(boolean writeable) {
 		this.writeable = writeable;
+		containingDisk.updateFileManifest();
 	}
 	
 	

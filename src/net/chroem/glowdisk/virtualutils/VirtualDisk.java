@@ -33,29 +33,36 @@ import java.nio.channels.FileChannel.MapMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
+
 import net.chroem.glowdisk.virtualutils.AllocatedSpaceMarker;
 import net.chroem.glowdisk.virtualutils.FreeSpaceMarker;
 import net.chroem.glowdisk.virtualutils.VirtualFile.FilePathMarker;
 
 
-
 public abstract class VirtualDisk {
+	
+	
 	//private final String rootPath;
-	private final int size;
+	@Expose private final int size;
 	
 	protected final ArrayList<VirtualFile> toBeDeleted = new ArrayList<VirtualFile>();
 	
 	private static VirtualDisk primaryDisk;
-	private final VirtualFile root;
+	@Expose private final VirtualFile root;
+	protected final VirtualFile manifest;
 	
 	protected ArrayList<FreeSpaceMarker> emptySpace = new ArrayList<FreeSpaceMarker>();	
 	
 	public VirtualDisk(int size) {
 		//this.rootPath = root.replace(File.separator, "");
+		VirtualDisk.primaryDisk = this;
 		this.size = size;
 		this.root = VirtualFile.generateRoot(this);
+		this.manifest = VirtualFile.generateManifest();
 		emptySpace.add(FreeSpaceMarker.generateRoot(this));
-		VirtualDisk.primaryDisk = this;
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			
 			@Override
@@ -66,7 +73,7 @@ public abstract class VirtualDisk {
 						file.delete();
 					}
 				}
-				//update the filetree stored on the disk to reflect the changes
+				updateFileManifest();
 			}
 			
 		});
@@ -75,10 +82,9 @@ public abstract class VirtualDisk {
 	
 	public abstract OutputStream getOutputStream(VirtualFile file) throws IOException;
 	public abstract InputStream getInputStream(VirtualFile file);
+	protected abstract void updateFileManifest();
 	
 
-	
-	
 	public static boolean isEnabled() {
 		return VirtualDisk.primaryDisk != null;
 	}

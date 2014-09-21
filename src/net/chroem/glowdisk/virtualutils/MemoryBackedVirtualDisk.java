@@ -20,6 +20,8 @@
 
 package net.chroem.glowdisk.virtualutils;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,11 +37,20 @@ import java.util.Arrays;
 
 import javax.activation.UnsupportedDataTypeException;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import net.chroem.glowdisk.virtualutils.AllocatedSpaceMarker;
 
 
 public class MemoryBackedVirtualDisk extends VirtualDisk{
 
+	private JsonParser parser = new JsonParser();
+	private final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+
+	
 	protected MappedByteBuffer buffer;
 	private final int size;
 	
@@ -83,16 +94,63 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 			e.printStackTrace();
 		}
 	}
+	
+	
+	public MemoryBackedVirtualDisk(File diskFile) throws FileNotFoundException, IOException{
+		super((int) diskFile.length() - 1024);
+		this.size = (int) diskFile.length() - 1024;
+		FileChannel channel;
+		channel = new RandomAccessFile(diskFile, "rw").getChannel();
+		this.buffer = channel.map(MapMode.READ_WRITE, 0, diskFile.length());
+		channel.close();
+		
+		for (int i = 0; i < 64; i++) {
+			if (buffer.getLong(i * 16) != Long.MIN_VALUE) {
+				long startIndex = buffer.getLong(i * 16);
+				long endIndex = buffer.getLong((i * 16) + 8);
+				AllocatedSpaceMarker.forceAddNewAllocatedZoneToParent(super.manifest, (int) startIndex, (int) endIndex);
+			} else {
+				break;
+			}
+			InputStream input = getInputStream(super.manifest);
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			byte[] buffer = new byte[4096];
+			int len;
+			while ((len = input.read(buffer)) > -1) {
+				output.write(buffer, 0, len);
+			}
+			input.close();
+			JsonObject root = parser.parse(output.toString()).getAsJsonObject();
+			try {
+				super.getRoot().constructChildrenFromJson(root.get("children").getAsJsonArray());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	
 	@Override
 	public OutputStream getOutputStream(VirtualFile file) throws IOException{
 		return new MemoryFileOutputStream(file);
 	}
 
-	
-	
 	@Override
 	public InputStream getInputStream(VirtualFile file) {
 		return new MemoryFileInputStream(file);
+	}
+	
+	@Override
+	public void updateFileManifest() {
+		try {
+			OutputStream output =  new ManifestOutputStream();
+			String json = gson.toJson(super.getRoot());
+			output.write(json.getBytes());
+			output.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public class MemoryFileOutputStream extends OutputStream {
@@ -102,7 +160,7 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 		private int fileIndex;
 		private int diskIndex;
 		
-		private final int totalSegments;
+		//private final int totalSegments;
 		private AllocatedSpaceMarker currentSegment;
 		private int currentSegmentNumber;
 		private int indexInSegment;
@@ -114,7 +172,7 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 		private MemoryFileOutputStream() {
 			this.buffer = null;
 			this.file = null;
-			this.totalSegments = 0;
+			//this.totalSegments = 0;
 		}
 		
 		public MemoryFileOutputStream(VirtualFile file) throws IOException {
@@ -126,7 +184,7 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 			this.file = file;
 			this.buffer = ((MemoryBackedVirtualDisk) file.getContainingDisk()).buffer;
 			
-			this.totalSegments = file.dataSegments.size();
+		//	this.totalSegments = file.dataSegments.size();
 			if (!file.hasData) {
 				file.changeSize(file.getContainingDisk().getDefaultSegmentSize());
 			}
@@ -166,6 +224,7 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 				buffer.position(bufferIndex);
 				buffer.put(Arrays.copyOf(b, available));
 				indexInSegment += available; //special case (splits array into two different arrays for writing across separate segments)
+				dataSize += available;
 				write(Arrays.copyOfRange(b, available + 1, b.length));
 			} else if (advanceToNextSegment()) {
 				write(b);
@@ -191,6 +250,7 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 				buffer.position(bufferIndex);
 				buffer.put(Arrays.copyOf(b, off + available));// possibly incorrect implementation (TEST!)
 				indexInSegment += available; //special case (splits array into two different arrays for writing across separate segments)
+				dataSize += available;
 				write(Arrays.copyOfRange(b, off + available + 1, len));
 			} else if (advanceToNextSegment()) {
 				write(b);
@@ -211,6 +271,7 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 		public void close() throws IOException {
 			file.changeSize(this.dataSize - file.getAllocatedSize() + 1);  //gets rid of the extra preallocated space
 			super.close();
+			file.getContainingDisk().updateFileManifest();
 		}
 		
 		private boolean indexIsValid(int index) {
@@ -282,10 +343,9 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 				buffer.position(bufferIndex);
 				buffer.get(b);
 				sizeRead = b.length;
-			} else if (available() > 0) {
+			} else if ((sizeRead = available()) > 0) {
 				buffer.position(bufferIndex);
 				buffer.get(b);
-				sizeRead = available();
 			} else if (advanceToNextSegment()) {
 				sizeRead = read(b);
 			} else {
@@ -369,7 +429,7 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 		}
 		
 		private boolean advanceToNextSegment() {
-			if (currentSegmentNumber < file.dataSegments.size()) {
+			if (currentSegmentNumber + 1 < file.dataSegments.size()) {
 				this.currentSegmentNumber++;
 				this.currentSegment = file.dataSegments.get(currentSegmentNumber);
 				this.indexInSegment = 0;
@@ -383,6 +443,49 @@ public class MemoryBackedVirtualDisk extends VirtualDisk{
 		
 		private int getBufferIndex() {
 			return currentSegment.beginIndex + indexInSegment;
+		}
+		
+	}
+	
+	public class ManifestOutputStream extends MemoryFileOutputStream {
+		
+		public ManifestOutputStream() throws IOException {
+			super(VirtualDisk.getPrimaryDisk().manifest);
+		}
+		
+		@Override
+		public void write(byte[] b) {
+			try {
+				super.write(b);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		@Override
+		public void write(byte[] b, int off, int len) {
+			try {
+				super.write(b, off, len);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		
+		@Override
+		public void close() throws IOException {
+			super.file.changeSize(super.dataSize - super.file.getAllocatedSize() + 1);  //gets rid of the extra preallocated space
+			for (int i = 0; i < super.file.dataSegments.size(); i++) {
+				AllocatedSpaceMarker marker = super.file.dataSegments.get(i);
+				long startIndex = marker.beginIndex;
+				long endIndex = marker.endIndex;
+				buffer.putLong(i * 16, startIndex);
+				buffer.putLong((i * 16) + 8, endIndex);
+			}
+			for (int i = super.file.dataSegments.size(); i < 64; i++) {
+				buffer.putLong(i * 16, Long.MIN_VALUE);
+				buffer.putLong((i * 16) + 8, Long.MIN_VALUE);
+			}
 		}
 		
 	}
