@@ -15,7 +15,7 @@ This is just a preliminary release.
 
 ###TODO###
 *	~~Iron out some kinks in the file tree~~
-*	Persist file tree structure to disk
+*	~~Persist file tree structure to disk~~
 *	Allow chaining of MappedByteBuffers for RAMdisks larger than 2GB
 *	Add support for random access IO (FileChannel and RandomAccessFile)
 *	Finish the IO wrapper classes
